@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --navy: #2b2646;
+    --navy: #2b2646;h
     --yellow: #ffd633;
     --cream: #faf7f0;
     --warm: #f5f0e8;
@@ -351,7 +351,7 @@ async function playAudio(text, btn) {
     const b64 = await res.text();
 
     // VoiceRSS returns plain base64 mp3 when b64=true
-    const audioSrc = `data:audio/mp3;base64,${b64}`;
+    const audioSrc = b64.trim();
     const audio = new Audio(audioSrc);
     currentAudio = audio;
 
