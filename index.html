@@ -331,11 +331,11 @@ function updateProgress() {
   document.getElementById('streakBadge').textContent = `🔥 Day ${S.streak}`;
 }
 
-// ── AUDIO — VoiceRSS ──────────────────────────────────────────────────────────
+// ── AUDIO — VoiceRSS (base64 mode avoids CORS on GitHub Pages) ───────────────
 let currentAudio = null;
 let currentBtn = null;
 
-function playAudio(text, btn) {
+async function playAudio(text, btn) {
   // Stop any currently playing audio
   if (currentAudio) {
     currentAudio.pause();
@@ -345,23 +345,32 @@ function playAudio(text, btn) {
 
   if (btn) { btn.textContent = '🔊'; btn.classList.add('playing'); currentBtn = btn; }
 
-  const url = `https://api.voicerss.org/?key=${VOICERSS_KEY}&hl=${LANG_CODE}&src=${encodeURIComponent(text)}&f=44khz_16bit_stereo&c=mp3&ssml=false`;
-  const audio = new Audio(url);
-  currentAudio = audio;
+  try {
+    const url = `https://api.voicerss.org/?key=${VOICERSS_KEY}&hl=${LANG_CODE}&src=${encodeURIComponent(text)}&c=mp3&f=44khz_16bit_mono&b64=true`;
+    const res = await fetch(url);
+    const b64 = await res.text();
 
-  audio.onended = () => {
+    // VoiceRSS returns plain base64 mp3 when b64=true
+    const audioSrc = `data:audio/mp3;base64,${b64}`;
+    const audio = new Audio(audioSrc);
+    currentAudio = audio;
+
+    audio.onended = () => {
+      if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
+      currentAudio = null; currentBtn = null;
+    };
+    audio.onerror = () => {
+      if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
+      currentAudio = null; currentBtn = null;
+      showToast('Audio unavailable right now');
+    };
+
+    await audio.play();
+  } catch(e) {
     if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
     currentAudio = null; currentBtn = null;
-  };
-  audio.onerror = () => {
-    if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
-    currentAudio = null; currentBtn = null;
-    showToast('Audio unavailable right now');
-  };
-
-  audio.play().catch(() => {
-    if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
-  });
+    showToast('Audio unavailable — check connection');
+  }
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
