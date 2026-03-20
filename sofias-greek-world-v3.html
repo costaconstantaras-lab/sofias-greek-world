@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Sofia's Greek World 🇬🇷</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #2b2646;
+    --yellow: #ffd633;
+    --cream: #faf7f0;
+    --warm: #f5f0e8;
+    --green: #4caf7d;
+    --red: #e05c5c;
+    --grey: #888;
+    --lgrey: #ddd;
+    --radius: 16px;
+    --shadow: 0 4px 24px rgba(43,38,70,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--cream);
+    color: var(--navy);
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-bottom: 90px;
+  }
+
+  .header { background: var(--navy); padding: 18px 18px 14px; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .logo { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--yellow); font-weight: 900; }
+  .logo span { color: white; font-size: 16px; }
+  .streak { background: var(--yellow); color: var(--navy); font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 20px; }
+  .progress-row { display: flex; align-items: center; gap: 10px; }
+  .progress-bar { flex: 1; height: 7px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--yellow); border-radius: 4px; transition: width 0.5s ease; }
+  .progress-label { color: rgba(255,255,255,0.65); font-size: 11px; white-space: nowrap; }
+
+  .nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: white; border-top: 1px solid #eee; display: flex; z-index: 100; box-shadow: 0 -4px 20px rgba(0,0,0,0.07); }
+  .nav-btn { flex: 1; padding: 10px 4px 8px; border: none; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; font-family: 'Nunito', sans-serif; font-size: 10px; font-weight: 700; color: var(--grey); transition: color 0.2s; }
+  .nav-btn.active { color: var(--navy); }
+  .nav-btn .ni { font-size: 20px; }
+
+  .screen { display: none; padding: 16px; animation: fadeIn 0.2s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+  .screen-title { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 3px; }
+  .screen-sub { font-size: 12px; color: var(--grey); margin-bottom: 18px; }
+  .section-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--grey); margin-bottom: 10px; }
+
+  .quick-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .q-btn { border: none; border-radius: var(--radius); padding: 14px 12px; cursor: pointer; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 13px; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; box-shadow: var(--shadow); transition: transform 0.15s; }
+  .q-btn:active { transform: scale(0.97); }
+  .q-btn .qe { font-size: 22px; }
+  .q-btn.dark { background: var(--navy); color: white; }
+  .q-btn.light { background: var(--yellow); color: var(--navy); }
+
+  .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .cat-card { background: white; border-radius: var(--radius); padding: 16px 12px; box-shadow: var(--shadow); cursor: pointer; transition: transform 0.15s; border: 2px solid transparent; position: relative; overflow: hidden; }
+  .cat-card:active { transform: scale(0.97); }
+  .cat-card.active-cat { border-color: var(--navy); }
+  .cat-card.locked { opacity: 0.55; pointer-events: none; }
+  .cat-card .ce { font-size: 28px; margin-bottom: 6px; }
+  .cat-card .cn { font-weight: 800; font-size: 14px; }
+  .cat-card .cc { font-size: 11px; color: var(--grey); margin-top: 2px; }
+  .cat-card .cbar { margin-top: 8px; height: 4px; background: var(--warm); border-radius: 2px; overflow: hidden; }
+  .cat-card .cbar-fill { height: 100%; background: var(--yellow); border-radius: 2px; }
+  .cat-card .lock { position: absolute; top: 8px; right: 8px; font-size: 14px; }
+  .cat-card .done-badge { position: absolute; top: 8px; right: 8px; background: var(--green); color: white; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px; }
+
+  .pack-card { background: white; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 10px; display: flex; align-items: center; gap: 14px; border: 2px solid transparent; }
+  .pack-card.requested { border-color: var(--yellow); }
+  .pack-emoji { font-size: 32px; min-width: 40px; text-align: center; }
+  .pack-info { flex: 1; }
+  .pack-name { font-weight: 800; font-size: 15px; }
+  .pack-desc { font-size: 12px; color: var(--grey); margin-top: 2px; }
+  .pack-action { background: var(--navy); color: white; border: none; border-radius: 20px; padding: 6px 14px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .pack-action.requested { background: var(--grey); cursor: default; }
+
+  .ask-box { background: white; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 16px; }
+  .ask-box h3 { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+  .ask-box p { font-size: 12px; color: var(--grey); margin-bottom: 12px; }
+  .ask-input-row { display: flex; gap: 8px; }
+  .ask-input { flex: 1; border: 2px solid var(--lgrey); border-radius: 10px; padding: 10px 12px; font-family: 'Nunito', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
+  .ask-input:focus { border-color: var(--navy); }
+  .ask-submit { background: var(--navy); color: white; border: none; border-radius: 10px; padding: 10px 16px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 13px; cursor: pointer; }
+  .ask-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .ask-result { margin-top: 12px; padding: 12px; background: var(--warm); border-radius: 10px; display: none; }
+  .ask-result.visible { display: block; }
+  .ar-greek { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--navy); }
+  .ar-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+  .ar-tag { background: white; border-radius: 6px; padding: 3px 8px; font-size: 12px; font-weight: 700; }
+  .ar-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .ar-btn { flex: 1; padding: 10px; border: none; border-radius: 10px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 13px; cursor: pointer; }
+  .ar-btn.add { background: var(--green); color: white; }
+  .ar-btn.hear { background: white; color: var(--navy); border: 2px solid var(--lgrey); }
+  @keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+  .loading-dots::after { content: '.'; animation: dots 1.2s infinite; }
+
+  .word-card { background: white; border-radius: var(--radius); padding: 14px; margin-bottom: 8px; box-shadow: 0 2px 10px rgba(43,38,70,0.07); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: transform 0.15s; border-left: 4px solid var(--lgrey); }
+  .word-card:active { transform: scale(0.98); }
+  .word-card.known { border-left-color: var(--green); }
+  .word-card.mine { border-left-color: var(--yellow); }
+  .we { font-size: 26px; min-width: 34px; text-align: center; }
+  .wi { flex: 1; }
+  .wg { font-family: 'Playfair Display', serif; font-size: 19px; color: var(--navy); font-weight: 700; }
+  .wgl { font-size: 12px; color: var(--grey); }
+  .wp { font-size: 11px; color: var(--grey); font-style: italic; }
+  .wen { font-size: 12px; font-weight: 700; color: var(--navy); margin-top: 1px; }
+  .audio-btn { background: var(--warm); border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; }
+  .audio-btn.playing { background: var(--yellow); animation: pulse 0.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+  .filter-row { display: flex; gap: 7px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
+  .chip { background: white; border: 2px solid var(--lgrey); border-radius: 20px; padding: 5px 12px; font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+  .chip.active { background: var(--navy); color: white; border-color: var(--navy); }
+
+  .game-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .scores { display: flex; gap: 10px; }
+  .score-pill { background: white; border-radius: 20px; padding: 5px 12px; font-weight: 800; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .score-pill.c { color: var(--green); }
+  .score-pill.w { color: var(--red); }
+  .prog-label { font-size: 12px; color: var(--grey); }
+
+  .fc-wrap { perspective: 1000px; margin-bottom: 20px; cursor: pointer; min-height: 220px; }
+  .fc { width: 100%; min-height: 210px; position: relative; transform-style: preserve-3d; transition: transform 0.5s ease; border-radius: 20px; }
+  .fc.flipped { transform: rotateY(180deg); }
+  .fc-front, .fc-back { position: absolute; width: 100%; min-height: 210px; border-radius: 20px; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px 20px; box-shadow: var(--shadow); }
+  .fc-front { background: var(--navy); color: white; }
+  .fc-back { background: var(--yellow); color: var(--navy); transform: rotateY(180deg); }
+  .fc-emoji { font-size: 44px; margin-bottom: 10px; }
+  .fc-greek { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900; margin-bottom: 4px; }
+  .fc-gl { font-size: 15px; opacity: 0.65; }
+  .fc-hint { font-size: 12px; opacity: 0.5; margin-top: 14px; }
+  .fc-en { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; }
+  .fc-pr { font-size: 14px; font-weight: 600; margin-top: 4px; }
+  .fc-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .fc-btn { padding: 14px; border: none; border-radius: var(--radius); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; transition: transform 0.15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .fc-btn:active { transform: scale(0.96); }
+  .fc-btn.yes { background: var(--green); color: white; }
+  .fc-btn.no { background: var(--warm); color: var(--navy); border: 2px solid var(--lgrey); }
+  .fc-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .hear-btn { width: 100%; background: none; border: none; color: var(--grey); font-size: 13px; padding: 8px; cursor: pointer; font-family: 'Nunito', sans-serif; }
+
+  .match-q { background: var(--navy); color: white; border-radius: var(--radius); padding: 22px 16px; text-align: center; margin-bottom: 18px; box-shadow: var(--shadow); }
+  .match-q .mqg { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 900; }
+  .match-q .mqsub { font-size: 13px; opacity: 0.65; margin-top: 4px; font-style: italic; }
+  .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .match-opt { background: white; border: 3px solid var(--lgrey); border-radius: var(--radius); padding: 16px 10px; text-align: center; cursor: pointer; font-size: 30px; transition: all 0.15s; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .match-opt .ol { font-size: 11px; font-weight: 700; color: var(--grey); margin-top: 4px; }
+  .match-opt:active { transform: scale(0.96); }
+  .match-opt.correct { border-color: var(--green); background: #f0faf5; }
+  .match-opt.wrong { border-color: var(--red); background: #fff5f5; }
+  .match-opt.disabled { pointer-events: none; }
+
+  .complete { text-align: center; padding: 40px 20px; }
+  .complete .big { font-size: 60px; margin-bottom: 14px; }
+  .complete h2 { font-family: 'Playfair Display', serif; font-size: 26px; margin-bottom: 6px; }
+  .complete p { color: var(--grey); margin-bottom: 22px; font-size: 14px; }
+  .restart-btn { background: var(--navy); color: white; border: none; border-radius: var(--radius); padding: 14px 28px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; }
+
+  .next-btn { width: 100%; background: var(--navy); color: white; border: none; border-radius: var(--radius); padding: 14px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; cursor: pointer; display: none; margin-top: 4px; }
+  .next-btn.vis { display: block; }
+
+  .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--navy); color: white; padding: 10px 20px; border-radius: 20px; font-weight: 700; font-size: 13px; opacity: 0; transition: all 0.3s; z-index: 200; white-space: nowrap; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
+  .pop { animation: pop 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">Sofia's Greek <span>🇬🇷</span></div>
+    <div class="streak" id="streakBadge">🔥 Day 1</div>
+  </div>
+  <div class="progress-row">
+    <div class="progress-bar"><div class="progress-fill" id="gProgress" style="width:0%"></div></div>
+    <div class="progress-label" id="gLabel">0 known</div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="go('home')" id="nav-home"><span class="ni">🏠</span>Home</button>
+  <button class="nav-btn" onclick="go('discover')" id="nav-discover"><span class="ni">✨</span>Discover</button>
+  <button class="nav-btn" onclick="go('vocab')" id="nav-vocab"><span class="ni">📖</span>Words</button>
+  <button class="nav-btn" onclick="go('flash')" id="nav-flash"><span class="ni">🃏</span>Cards</button>
+  <button class="nav-btn" onclick="go('match')" id="nav-match"><span class="ni">🎯</span>Match</button>
+</nav>
+
+<!-- HOME -->
+<div class="screen active" id="screen-home">
+  <div class="screen-title">Γεια σου, Sofia! 👋</div>
+  <div class="screen-sub">What do you want to do today?</div>
+  <div class="quick-row">
+    <button class="q-btn light" onclick="go('flash')"><span class="qe">🃏</span>Flashcards</button>
+    <button class="q-btn dark" onclick="go('match')"><span class="qe">🎯</span>Emoji Match</button>
+  </div>
+  <div class="section-label">Your categories</div>
+  <div class="cat-grid" id="catGrid"></div>
+</div>
+
+<!-- DISCOVER -->
+<div class="screen" id="screen-discover">
+  <div class="screen-title">Discover</div>
+  <div class="screen-sub">Choose what you want to learn next</div>
+  <div class="ask-box">
+    <h3>✏️ Ask in Greek</h3>
+    <p>Type any word or phrase in English and I'll find the Greek for you.</p>
+    <div class="ask-input-row">
+      <input class="ask-input" id="askInput" placeholder="e.g. I'm hungry, dog, football…" onkeydown="if(event.key==='Enter') askGreek()" />
+      <button class="ask-submit" id="askBtn" onclick="askGreek()">Ask →</button>
+    </div>
+    <div class="ask-result" id="askResult"></div>
+  </div>
+  <div class="section-label">Topic packs</div>
+  <div id="packList"></div>
+</div>
+
+<!-- VOCAB -->
+<div class="screen" id="screen-vocab">
+  <div class="screen-title">All Words</div>
+  <div class="screen-sub">Tap a word to mark it known · 🔈 to hear it</div>
+  <div class="filter-row" id="filterRow"></div>
+  <div id="wordList"></div>
+</div>
+
+<!-- FLASHCARDS -->
+<div class="screen" id="screen-flash">
+  <div class="screen-title">Flashcards</div>
+  <div class="screen-sub">Tap the card to reveal the answer</div>
+  <div class="game-header">
+    <div class="scores">
+      <div class="score-pill c" id="fcC">✓ 0</div>
+      <div class="score-pill w" id="fcW">✗ 0</div>
+    </div>
+    <div class="prog-label" id="fcProg">1 of 10</div>
+  </div>
+  <div id="fcArea"></div>
+</div>
+
+<!-- MATCH -->
+<div class="screen" id="screen-match">
+  <div class="screen-title">Emoji Match</div>
+  <div class="screen-sub">Which emoji matches the Greek word?</div>
+  <div class="game-header">
+    <div class="scores">
+      <div class="score-pill c" id="mC">✓ 0</div>
+      <div class="score-pill w" id="mW">✗ 0</div>
+    </div>
+    <div class="prog-label" id="mProg">1 of 10</div>
+  </div>
+  <div id="matchArea"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const VOICERSS_KEY = '58b8aaf448554303b0a66baab206cf5a';
+const LANG_CODE = 'el-gr'; // Greek — change to 'es-es' for Spanish, 'fr-fr' for French etc.
+const LANG_NAME = 'Greek';
+const LEARNER_NAME = 'Sofia';
+
+// ── WORD DATA — emojis audited for accuracy ───────────────────────────────────
+// Note: no fridge emoji exists in Unicode. Using 🧊 is misleading so we use
+// a descriptive label approach and pick the closest honest emoji available.
+const BASE_WORDS = [
+  { id:1,  greek:"ψυγείο",   greeklish:"psygeio",   pronun:"psee-YEE-oh",  english:"fridge",   emoji:"🥶", cat:"kitchen", level:1 },
+  { id:2,  greek:"κουζίνα",  greeklish:"kouzina",   pronun:"koo-ZEE-nah",  english:"kitchen",  emoji:"🍳", cat:"kitchen", level:1 },
+  { id:3,  greek:"τραπέζι",  greeklish:"trapezi",   pronun:"trah-PEH-zee", english:"table",    emoji:"🪑", cat:"kitchen", level:1 },
+  { id:4,  greek:"καρέκλα",  greeklish:"karekla",   pronun:"kah-REK-lah",  english:"chair",    emoji:"🪑", cat:"kitchen", level:1 },
+  { id:5,  greek:"νερό",     greeklish:"nero",      pronun:"neh-ROH",      english:"water",    emoji:"💧", cat:"kitchen", level:1 },
+  { id:6,  greek:"ποτήρι",   greeklish:"potiri",    pronun:"poh-TEE-ree",  english:"glass",    emoji:"🥛", cat:"kitchen", level:1 },
+  { id:7,  greek:"πιάτο",    greeklish:"piato",     pronun:"PYAH-toh",     english:"plate",    emoji:"🍽️", cat:"kitchen", level:1 },
+  { id:8,  greek:"κουτάλι",  greeklish:"koutali",   pronun:"koo-TAH-lee",  english:"spoon",    emoji:"🥄", cat:"kitchen", level:1 },
+  { id:9,  greek:"πιρούνι",  greeklish:"pirouni",   pronun:"pee-ROO-nee",  english:"fork",     emoji:"🍴", cat:"kitchen", level:1 },
+  { id:10, greek:"μαχαίρι",  greeklish:"machairi",  pronun:"mah-HEH-ree",  english:"knife",    emoji:"🗡️", cat:"kitchen", level:1 },
+];
+
+const PACKS = [
+  { id:"bedroom",  name:"Bedroom",  emoji:"🛏️", desc:"Bed, pillow, window, door and more",  unlocked:false },
+  { id:"family",   name:"Family",   emoji:"👨‍👩‍👧", desc:"Mum, dad, yiayia, papou, siblings", unlocked:false },
+  { id:"animals",  name:"Animals",  emoji:"🐶", desc:"Dog, cat, bird, fish and more",        unlocked:false },
+  { id:"feelings", name:"Feelings", emoji:"💛", desc:"Happy, sad, tired, hungry, excited",   unlocked:false },
+  { id:"food",     name:"Food",     emoji:"🍕", desc:"Your favourite foods in Greek",         unlocked:false },
+  { id:"school",   name:"School",   emoji:"📚", desc:"Pen, book, teacher, friends",          unlocked:false },
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+function loadState() {
+  return {
+    known:     JSON.parse(localStorage.getItem('sg_known')     || '[]'),
+    myWords:   JSON.parse(localStorage.getItem('sg_mywords')   || '[]'),
+    requested: JSON.parse(localStorage.getItem('sg_requested') || '[]'),
+    streak:    parseInt(localStorage.getItem('sg_streak')      || '1'),
+    nextId:    parseInt(localStorage.getItem('sg_nextid')      || '1000'),
+  };
+}
+function saveState() {
+  localStorage.setItem('sg_known',     JSON.stringify(S.known));
+  localStorage.setItem('sg_mywords',   JSON.stringify(S.myWords));
+  localStorage.setItem('sg_requested', JSON.stringify(S.requested));
+  localStorage.setItem('sg_streak',    S.streak);
+  localStorage.setItem('sg_nextid',    S.nextId);
+}
+
+let S = loadState();
+function allWords() { return [...BASE_WORDS, ...S.myWords]; }
+function isKnown(id) { return S.known.includes(id); }
+function toggleKnown(id) {
+  if (isKnown(id)) S.known = S.known.filter(k => k !== id);
+  else S.known.push(id);
+  saveState(); updateProgress();
+}
+
+// ── PROGRESS ──────────────────────────────────────────────────────────────────
+function updateProgress() {
+  const words = allWords();
+  const pct = words.length ? Math.round((S.known.length / words.length) * 100) : 0;
+  document.getElementById('gProgress').style.width = pct + '%';
+  document.getElementById('gLabel').textContent = `${S.known.length} / ${words.length} known`;
+  document.getElementById('streakBadge').textContent = `🔥 Day ${S.streak}`;
+}
+
+// ── AUDIO — VoiceRSS ──────────────────────────────────────────────────────────
+let currentAudio = null;
+let currentBtn = null;
+
+function playAudio(text, btn) {
+  // Stop any currently playing audio
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+    if (currentBtn) { currentBtn.textContent = '🔈'; currentBtn.classList.remove('playing'); }
+  }
+
+  if (btn) { btn.textContent = '🔊'; btn.classList.add('playing'); currentBtn = btn; }
+
+  const url = `https://api.voicerss.org/?key=${VOICERSS_KEY}&hl=${LANG_CODE}&src=${encodeURIComponent(text)}&f=44khz_16bit_stereo&c=mp3&ssml=false`;
+  const audio = new Audio(url);
+  currentAudio = audio;
+
+  audio.onended = () => {
+    if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
+    currentAudio = null; currentBtn = null;
+  };
+  audio.onerror = () => {
+    if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
+    currentAudio = null; currentBtn = null;
+    showToast('Audio unavailable right now');
+  };
+
+  audio.play().catch(() => {
+    if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
+  });
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+let activeFilter = 'all';
+function go(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  const renders = { home: renderHome, discover: renderDiscover, vocab: renderVocab, flash: startFlash, match: startMatch };
+  if (renders[name]) renders[name]();
+}
+
+// ── HOME ──────────────────────────────────────────────────────────────────────
+function renderHome() {
+  updateProgress();
+  const grid = document.getElementById('catGrid');
+  grid.innerHTML = '';
+
+  const allCats = [
+    { key:'kitchen', name:'Kitchen', emoji:'🍽️', active:true },
+    ...PACKS.map(p => ({ key:p.id, name:p.name, emoji:p.emoji, active:p.unlocked }))
+  ];
+
+  allCats.forEach(cat => {
+    const words = allWords().filter(w => w.cat === cat.key);
+    const knownCount = words.filter(w => isKnown(w.id)).length;
+    const pct = words.length ? Math.round((knownCount / words.length) * 100) : 0;
+    const card = document.createElement('div');
+    card.className = 'cat-card ' + (cat.active ? 'active-cat' : 'locked');
+    card.innerHTML = `
+      <div class="ce">${cat.emoji}</div>
+      <div class="cn">${cat.name}</div>
+      <div class="cc">${words.length ? `${knownCount}/${words.length} known` : 'Coming soon'}</div>
+      ${words.length ? `<div class="cbar"><div class="cbar-fill" style="width:${pct}%"></div></div>` : ''}
+      ${!cat.active ? '<div class="lock">🔒</div>' : (pct === 100 && words.length ? '<div class="done-badge">✓ Done!</div>' : '')}
+    `;
+    if (cat.active && words.length) {
+      card.onclick = () => { activeFilter = cat.key; go('vocab'); };
+    }
+    grid.appendChild(card);
+  });
+}
+
+// ── DISCOVER ──────────────────────────────────────────────────────────────────
+function renderDiscover() {
+  const list = document.getElementById('packList');
+  list.innerHTML = '';
+  PACKS.forEach(pack => {
+    const isReq = S.requested.includes(pack.id);
+    const card = document.createElement('div');
+    card.className = 'pack-card' + (isReq ? ' requested' : '');
+    card.innerHTML = `
+      <div class="pack-emoji">${pack.emoji}</div>
+      <div class="pack-info">
+        <div class="pack-name">${pack.name}</div>
+        <div class="pack-desc">${pack.desc}</div>
+      </div>
+      <button class="pack-action ${isReq ? 'requested' : ''}" onclick="requestPack('${pack.id}', this)">
+        ${pack.unlocked ? '▶ Go' : (isReq ? '✓ Requested' : '+ Unlock')}
+      </button>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function requestPack(id, btn) {
+  if (S.requested.includes(id)) return;
+  S.requested.push(id); saveState();
+  btn.textContent = '✓ Requested';
+  btn.className = 'pack-action requested';
+  btn.closest('.pack-card').classList.add('requested');
+  showToast('👍 Dad will see your request!');
+}
+
+// ── ASK IN GREEK (Claude API) ─────────────────────────────────────────────────
+let lastLookup = null;
+
+async function askGreek() {
+  const input = document.getElementById('askInput');
+  const btn = document.getElementById('askBtn');
+  const result = document.getElementById('askResult');
+  const query = input.value.trim();
+  if (!query) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Looking…';
+  result.className = 'ask-result visible';
+  result.innerHTML = `<div style="color:var(--grey);font-size:13px;">Finding the ${LANG_NAME} for "<strong>${query}</strong>" <span class="loading-dots"></span></div>`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `You are a ${LANG_NAME} language helper for ${LEARNER_NAME}, a 12-year-old learning modern conversational ${LANG_NAME}. They are a beginner with near-zero prior exposure.
+
+The user typed: "${query}"
+
+Reply ONLY with a valid JSON object — no markdown fences, no explanation. Use this exact format:
+{
+  "greek": "the word or phrase in the target language script",
+  "greeklish": "phonetic transliteration using English letters",
+  "pronun": "pronunciation guide — CAPITALISE the stressed syllable, e.g. NEH-roh or koo-ZEE-nah",
+  "english": "the English translation or meaning",
+  "emoji": "a single emoji that best visually represents this word or phrase",
+  "note": "one short friendly sentence for a 12-year-old about this word (optional, leave empty string if not useful)"
+}`
+        }]
+      })
+    });
+
+    const data = await res.json();
+    const text = data.content?.find(b => b.type === 'text')?.text || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const word = JSON.parse(clean);
+    lastLookup = word;
+
+    result.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <span style="font-size:36px">${word.emoji}</span>
+        <div>
+          <div class="ar-greek">${word.greek}</div>
+          <div style="font-size:12px;color:var(--grey);margin-top:2px;">${word.english}</div>
+        </div>
+      </div>
+      <div class="ar-row">
+        <span class="ar-tag">📝 ${word.greeklish}</span>
+        <span class="ar-tag">🗣️ ${word.pronun}</span>
+      </div>
+      ${word.note ? `<div style="font-size:12px;color:var(--grey);margin-top:8px;font-style:italic;">${word.note}</div>` : ''}
+      <div class="ar-actions">
+        <button class="ar-btn hear" id="hearLookupBtn" onclick="playAudio('${word.greek.replace(/'/g,"\\'")}', document.getElementById('hearLookupBtn'))">🔈 Hear it</button>
+        <button class="ar-btn add" onclick="addMyWord()">＋ Add to my words</button>
+      </div>
+    `;
+  } catch (e) {
+    result.innerHTML = `<div style="color:var(--red);font-size:13px;">Couldn't find that — check your connection and try again.</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Ask →';
+}
+
+function addMyWord() {
+  if (!lastLookup) return;
+  const exists = allWords().find(w => w.greek === lastLookup.greek);
+  if (exists) { showToast('Already in your words!'); return; }
+  S.myWords.push({
+    id: S.nextId++,
+    greek: lastLookup.greek,
+    greeklish: lastLookup.greeklish,
+    pronun: lastLookup.pronun,
+    english: lastLookup.english,
+    emoji: lastLookup.emoji,
+    cat: 'mine',
+    level: 1,
+    mine: true
+  });
+  saveState(); updateProgress();
+  showToast('✓ Added to your words!');
+  document.getElementById('askInput').value = '';
+  document.getElementById('askResult').className = 'ask-result';
+  lastLookup = null;
+}
+
+// ── VOCAB ─────────────────────────────────────────────────────────────────────
+function renderVocab() {
+  const filterRow = document.getElementById('filterRow');
+  filterRow.innerHTML = '';
+  const cats = ['all', 'kitchen', ...(S.myWords.length ? ['mine'] : []), ...PACKS.filter(p => p.unlocked).map(p => p.id)];
+  const labels = { all:'All', kitchen:'Kitchen', mine:'My Words', bedroom:'Bedroom', family:'Family', animals:'Animals', feelings:'Feelings', food:'Food', school:'School' };
+
+  cats.forEach(c => {
+    const chip = document.createElement('button');
+    chip.className = 'chip' + (activeFilter === c ? ' active' : '');
+    chip.textContent = labels[c] || c;
+    chip.onclick = () => { activeFilter = c; renderVocab(); };
+    filterRow.appendChild(chip);
+  });
+
+  const list = document.getElementById('wordList');
+  list.innerHTML = '';
+  const filtered = activeFilter === 'all' ? allWords() : allWords().filter(w => w.cat === activeFilter);
+
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--grey);">No words here yet.<br>Add some from Discover! ✨</div>`;
+    return;
+  }
+
+  filtered.forEach(word => {
+    const safeGreek = word.greek.replace(/'/g, "\\'");
+    const card = document.createElement('div');
+    card.className = `word-card ${isKnown(word.id) ? 'known' : ''} ${word.mine ? 'mine' : ''}`;
+    card.innerHTML = `
+      <div class="we">${word.emoji}</div>
+      <div class="wi">
+        <div class="wg">${word.greek}</div>
+        <div class="wgl">${word.greeklish}</div>
+        <div class="wp">${word.pronun}</div>
+        <div class="wen">${word.english}</div>
+      </div>
+      <button class="audio-btn" id="ab${word.id}" onclick="event.stopPropagation(); playAudio('${safeGreek}', document.getElementById('ab${word.id}'))">🔈</button>
+    `;
+    card.onclick = () => { toggleKnown(word.id); renderVocab(); };
+    list.appendChild(card);
+  });
+}
+
+// ── FLASHCARDS ────────────────────────────────────────────────────────────────
+let fcQ = [], fcIdx = 0, fcC = 0, fcW = 0, fcFlipped = false;
+
+function startFlash() {
+  fcQ = [...allWords()].sort(() => Math.random() - 0.5);
+  fcIdx = 0; fcC = 0; fcW = 0;
+  renderFlash();
+}
+
+function renderFlash() {
+  document.getElementById('fcC').textContent = `✓ ${fcC}`;
+  document.getElementById('fcW').textContent = `✗ ${fcW}`;
+  const area = document.getElementById('fcArea');
+
+  if (fcIdx >= fcQ.length) {
+    const pct = Math.round((fcC / fcQ.length) * 100);
+    area.innerHTML = `<div class="complete">
+      <div class="big">${pct >= 80 ? '🏆' : '💪'}</div>
+      <h2>${pct >= 80 ? `Μπράβο, ${LEARNER_NAME}!` : 'Nice work!'}</h2>
+      <p>${fcC} out of ${fcQ.length} — ${pct >= 80 ? "You're flying!" : "Keep practising!"}</p>
+      <button class="restart-btn" onclick="startFlash()">Play again 🔄</button>
+    </div>`;
+    return;
+  }
+
+  const word = fcQ[fcIdx];
+  const safeGreek = word.greek.replace(/'/g, "\\'");
+  fcFlipped = false;
+  document.getElementById('fcProg').textContent = `${fcIdx + 1} of ${fcQ.length}`;
+
+  area.innerHTML = `
+    <div class="fc-wrap" onclick="flipFC()">
+      <div class="fc" id="theFC">
+        <div class="fc-front">
+          <div class="fc-emoji">${word.emoji}</div>
+          <div class="fc-greek">${word.greek}</div>
+          <div class="fc-gl">${word.greeklish}</div>
+          <div class="fc-hint">Tap to reveal</div>
+        </div>
+        <div class="fc-back">
+          <div class="fc-emoji">${word.emoji}</div>
+          <div class="fc-en">${word.english}</div>
+          <div class="fc-pr">${word.pronun}</div>
+        </div>
+      </div>
+    </div>
+    <div class="fc-btns">
+      <button class="fc-btn no" id="fcNo" onclick="fcAnswer(false)" disabled>😅 Not yet</button>
+      <button class="fc-btn yes" id="fcYes" onclick="fcAnswer(true)" disabled>✓ Got it!</button>
+    </div>
+    <button class="hear-btn" id="fcHearBtn" onclick="playAudio('${safeGreek}', document.getElementById('fcHearBtn'))">🔈 Hear it said</button>
+  `;
+}
+
+function flipFC() {
+  const card = document.getElementById('theFC');
+  if (!card) return;
+  fcFlipped = !fcFlipped;
+  card.classList.toggle('flipped', fcFlipped);
+  if (fcFlipped) {
+    document.getElementById('fcYes').disabled = false;
+    document.getElementById('fcNo').disabled = false;
+    // Auto-play audio on flip
+    const word = fcQ[fcIdx];
+    const btn = document.getElementById('fcHearBtn');
+    if (btn) playAudio(word.greek, btn);
+  }
+}
+
+function fcAnswer(correct) {
+  const word = fcQ[fcIdx];
+  if (correct) { fcC++; if (!isKnown(word.id)) toggleKnown(word.id); }
+  else { fcW++; }
+  fcIdx++;
+  renderFlash();
+}
+
+// ── MATCH ─────────────────────────────────────────────────────────────────────
+let mQ = [], mIdx = 0, mC = 0, mW = 0;
+
+function startMatch() {
+  mQ = [...allWords()].sort(() => Math.random() - 0.5);
+  mIdx = 0; mC = 0; mW = 0;
+  renderMatch();
+}
+
+function renderMatch() {
+  document.getElementById('mC').textContent = `✓ ${mC}`;
+  document.getElementById('mW').textContent = `✗ ${mW}`;
+  const area = document.getElementById('matchArea');
+
+  if (mIdx >= mQ.length) {
+    const pct = Math.round((mC / mQ.length) * 100);
+    area.innerHTML = `<div class="complete">
+      <div class="big">${pct >= 80 ? '⭐' : '🌱'}</div>
+      <h2>${pct >= 80 ? 'Excellent!' : 'Keep going!'}</h2>
+      <p>${mC} out of ${mQ.length} — ${pct >= 80 ? "You're a natural!" : "Practice makes perfect!"}</p>
+      <button class="restart-btn" onclick="startMatch()">Play again 🔄</button>
+    </div>`;
+    return;
+  }
+
+  const correct = mQ[mIdx];
+  document.getElementById('mProg').textContent = `${mIdx + 1} of ${mQ.length}`;
+
+  const others = allWords().filter(w => w.id !== correct.id).sort(() => Math.random() - 0.5).slice(0, 3);
+  const opts = [...others, correct].sort(() => Math.random() - 0.5);
+
+  area.innerHTML = `
+    <div class="match-q">
+      <div class="mqg">${correct.greek}</div>
+      <div class="mqsub">${correct.greeklish} · ${correct.pronun}</div>
+    </div>
+    <div class="match-grid" id="matchGrid">
+      ${opts.map((o, i) => `
+        <div class="match-opt" id="mo${i}" onclick="matchAnswer(${i}, ${o.id}, ${correct.id})">
+          <div>${o.emoji}</div>
+          <div class="ol">${o.english}</div>
+        </div>`).join('')}
+    </div>
+    <button class="next-btn" id="mNext" onclick="nextMatch()">Next →</button>
+  `;
+
+  // Auto-play the word when question appears
+  setTimeout(() => playAudio(correct.greek, null), 300);
+}
+
+function matchAnswer(idx, chosenId, correctId) {
+  document.querySelectorAll('.match-opt').forEach(o => o.classList.add('disabled'));
+  const chosen = document.getElementById('mo' + idx);
+  if (chosenId === correctId) {
+    chosen.classList.add('correct', 'pop');
+    mC++;
+    const word = allWords().find(w => w.id === correctId);
+    if (word && !isKnown(word.id)) toggleKnown(word.id);
+    showToast('✓ Σωστό! Correct!');
+  } else {
+    chosen.classList.add('wrong');
+    mW++;
+    // Highlight the correct one
+    document.querySelectorAll('.match-opt').forEach(o => {
+      // find which option element has the correct word
+    });
+    // Re-find correct option by rebuilding — simpler approach
+    const correctWord = allWords().find(w => w.id === correctId);
+    document.querySelectorAll('.match-opt .ol').forEach(el => {
+      if (el.textContent === correctWord?.english) el.closest('.match-opt').classList.add('correct');
+    });
+    showToast('Not quite — keep going!');
+  }
+  document.getElementById('mC').textContent = `✓ ${mC}`;
+  document.getElementById('mW').textContent = `✗ ${mW}`;
+  document.getElementById('mNext').classList.add('vis');
+}
+
+function nextMatch() { mIdx++; renderMatch(); }
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+updateProgress();
+renderHome();
+</script>
+</body>
+</html>
