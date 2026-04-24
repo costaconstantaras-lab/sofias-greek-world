@@ -350,8 +350,8 @@ async function playAudio(text, btn) {
     const res = await fetch(url);
     const b64 = await res.text();
 
-    // VoiceRSS returns plain base64 mp3 when b64=true
-    const audioSrc = b64.trim();
+    // VoiceRSS returns plain base64 mp3 when b64=true; wrap in data URI so Audio can decode it
+    const audioSrc = `data:audio/mp3;base64,${b64.trim()}`;
     const audio = new Audio(audioSrc);
     currentAudio = audio;
 
