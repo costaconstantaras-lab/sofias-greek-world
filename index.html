@@ -265,8 +265,7 @@
 
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-const VOICERSS_KEY = '58b8aaf448554303b0a66baab206cf5a';
-const LANG_CODE = 'el-gr'; // Greek — change to 'es-es' for Spanish, 'fr-fr' for French etc.
+const SPEECH_LANG = 'el-GR'; // Greek — change to 'es-ES' for Spanish, 'fr-FR' for French etc.
 const LANG_NAME = 'Greek';
 const LEARNER_NAME = 'Sofia';
 
@@ -332,44 +331,53 @@ function updateProgress() {
 }
 
 // ── AUDIO — VoiceRSS (base64 mode avoids CORS on GitHub Pages) ───────────────
-let currentAudio = null;
 let currentBtn = null;
 
-async function playAudio(text, btn) {
-  // Stop any currently playing audio
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio = null;
+function playAudio(text, btn) {
+  const synth = window.speechSynthesis;
+
+  if (!synth) {
+    showToast('Speech not supported in this browser');
+    return;
+  }
+
+  // Stop any currently speaking utterance
+  if (synth.speaking) {
+    synth.cancel();
     if (currentBtn) { currentBtn.textContent = '🔈'; currentBtn.classList.remove('playing'); }
+    if (currentBtn === btn) { currentBtn = null; return; }
   }
 
   if (btn) { btn.textContent = '🔊'; btn.classList.add('playing'); currentBtn = btn; }
 
-  try {
-    const url = `https://api.voicerss.org/?key=${VOICERSS_KEY}&hl=${LANG_CODE}&src=${encodeURIComponent(text)}&c=mp3&f=44khz_16bit_mono&b64=true`;
-    const res = await fetch(url);
-    const b64 = await res.text();
+  function speak() {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = SPEECH_LANG;
+    utter.rate = 0.9;
 
-    // VoiceRSS returns plain base64 mp3 when b64=true; wrap in data URI so Audio can decode it
-    const audioSrc = `data:audio/mp3;base64,${b64.trim()}`;
-    const audio = new Audio(audioSrc);
-    currentAudio = audio;
+    // Pick a Greek voice if one is available
+    const voices = synth.getVoices();
+    const greekVoice = voices.find(v => v.lang.startsWith('el'));
+    if (greekVoice) utter.voice = greekVoice;
 
-    audio.onended = () => {
+    utter.onend = () => {
       if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
-      currentAudio = null; currentBtn = null;
+      currentBtn = null;
     };
-    audio.onerror = () => {
+    utter.onerror = () => {
       if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
-      currentAudio = null; currentBtn = null;
+      currentBtn = null;
       showToast('Audio unavailable right now');
     };
 
-    await audio.play();
-  } catch(e) {
-    if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
-    currentAudio = null; currentBtn = null;
-    showToast('Audio unavailable — check connection');
+    synth.speak(utter);
+  }
+
+  // Voices load asynchronously on first call; wait if not ready yet
+  if (synth.getVoices().length === 0) {
+    synth.addEventListener('voiceschanged', speak, { once: true });
+  } else {
+    speak();
   }
 }
 
