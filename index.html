@@ -265,7 +265,7 @@
 
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-const SPEECH_LANG = 'el-GR'; // Greek — change to 'es-ES' for Spanish, 'fr-FR' for French etc.
+const TTS_LANG = 'el'; // Greek — change to 'es' for Spanish, 'fr' for French etc.
 const LANG_NAME = 'Greek';
 const LEARNER_NAME = 'Sofia';
 
@@ -330,55 +330,46 @@ function updateProgress() {
   document.getElementById('streakBadge').textContent = `🔥 Day ${S.streak}`;
 }
 
-// ── AUDIO — VoiceRSS (base64 mode avoids CORS on GitHub Pages) ───────────────
+// ── AUDIO ─────────────────────────────────────────────────────────────────────
+let currentAudio = null;
 let currentBtn = null;
 
 function playAudio(text, btn) {
-  const synth = window.speechSynthesis;
-
-  if (!synth) {
-    showToast('Speech not supported in this browser');
-    return;
+  // Stop any currently playing audio
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.src = '';
+    currentAudio = null;
   }
-
-  // Stop any currently speaking utterance
-  if (synth.speaking) {
-    synth.cancel();
-    if (currentBtn) { currentBtn.textContent = '🔈'; currentBtn.classList.remove('playing'); }
-    if (currentBtn === btn) { currentBtn = null; return; }
+  if (currentBtn) {
+    const wasBtn = currentBtn;
+    currentBtn.textContent = '🔈';
+    currentBtn.classList.remove('playing');
+    currentBtn = null;
+    if (wasBtn === btn) return; // tapping same button again stops playback
   }
 
   if (btn) { btn.textContent = '🔊'; btn.classList.add('playing'); currentBtn = btn; }
 
-  function speak() {
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = SPEECH_LANG;
-    utter.rate = 0.9;
+  const src = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${TTS_LANG}&client=tw-ob`;
+  const audio = new Audio(src);
+  currentAudio = audio;
 
-    // Pick a Greek voice if one is available
-    const voices = synth.getVoices();
-    const greekVoice = voices.find(v => v.lang.startsWith('el'));
-    if (greekVoice) utter.voice = greekVoice;
+  audio.onended = () => {
+    if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
+    currentAudio = null; currentBtn = null;
+  };
+  audio.onerror = () => {
+    if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
+    currentAudio = null; currentBtn = null;
+    showToast('Audio unavailable right now');
+  };
 
-    utter.onend = () => {
-      if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
-      currentBtn = null;
-    };
-    utter.onerror = () => {
-      if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
-      currentBtn = null;
-      showToast('Audio unavailable right now');
-    };
-
-    synth.speak(utter);
-  }
-
-  // Voices load asynchronously on first call; wait if not ready yet
-  if (synth.getVoices().length === 0) {
-    synth.addEventListener('voiceschanged', speak, { once: true });
-  } else {
-    speak();
-  }
+  audio.play().catch(() => {
+    if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
+    currentAudio = null; currentBtn = null;
+    showToast('Audio unavailable — check connection');
+  });
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
