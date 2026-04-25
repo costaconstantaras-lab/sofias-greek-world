@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Sofia's Greek World 🇬🇷</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://code.responsivevoice.org/responsivevoice.js?key=FREE"></script>
 <style>
   :root {
     --navy: #2b2646;h
@@ -265,7 +266,7 @@
 
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-const TTS_LANG = 'el'; // Greek — change to 'es' for Spanish, 'fr' for French etc.
+const RV_VOICE = 'Greek Female'; // ResponsiveVoice voice name
 const LANG_NAME = 'Greek';
 const LEARNER_NAME = 'Sofia';
 
@@ -331,16 +332,11 @@ function updateProgress() {
 }
 
 // ── AUDIO ─────────────────────────────────────────────────────────────────────
-let currentAudio = null;
 let currentBtn = null;
 
 function playAudio(text, btn) {
-  // Stop any currently playing audio
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.src = '';
-    currentAudio = null;
-  }
+  // Stop any currently speaking audio
+  if (responsiveVoice.isPlaying()) responsiveVoice.cancel();
   if (currentBtn) {
     const wasBtn = currentBtn;
     currentBtn.textContent = '🔈';
@@ -351,24 +347,17 @@ function playAudio(text, btn) {
 
   if (btn) { btn.textContent = '🔊'; btn.classList.add('playing'); currentBtn = btn; }
 
-  const src = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${TTS_LANG}&client=tw-ob`;
-  const audio = new Audio(src);
-  currentAudio = audio;
-
-  audio.onended = () => {
-    if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
-    currentAudio = null; currentBtn = null;
-  };
-  audio.onerror = () => {
-    if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
-    currentAudio = null; currentBtn = null;
-    showToast('Audio unavailable right now');
-  };
-
-  audio.play().catch(() => {
-    if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
-    currentAudio = null; currentBtn = null;
-    showToast('Audio unavailable — check connection');
+  responsiveVoice.speak(text, RV_VOICE, {
+    rate: 0.9,
+    onend: () => {
+      if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
+      currentBtn = null;
+    },
+    onerror: () => {
+      if (btn) { btn.textContent = '🔈'; btn.classList.remove('playing'); }
+      currentBtn = null;
+      showToast('Audio unavailable right now');
+    }
   });
 }
 
